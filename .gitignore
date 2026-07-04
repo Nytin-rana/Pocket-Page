@@ -1,0 +1,62 @@
+# ==========================================
+# Xcode & Swift Core Defaults
+# ==========================================
+## User-specific settings 
+xcuserdata/
+
+## Build artifacts & caches
+DerivedData/
+build/
+.gen/
+
+## Swift Package Manager (SPM) build artifacts
+.build/
+
+## Xcode workspaces & state
+*.moved-aside
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+!default.workspace
+
+# ==========================================
+# Pocket Page Specific: Local Models & Databases
+# ==========================================
+## Massive LLM model weights to GitHub (e.g., Qwen 0.5B GGUF files)
+*.gguf
+*.bin
+*.mlmodel
+*.mlmodelc
+
+## Ignore local vector databases or ingested PDFs 
+*.db
+*.sqlite
+*.sqlite-journal
+/TestDocuments/
+/LocalStorage/
+
+# ==========================================
+# Dependency Managers
+# ==========================================
+## CocoaPods 
+# Pods/
+# CMakeLists.txt.user
+
+## Carthage
+Carthage/Build/
+
+# ==========================================
+# Operating System Garbage
+# ==========================================
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon_
+._*
+.Spotlight-V100
+.Trashes
