@@ -13,6 +13,11 @@ struct Pocket_PageApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Item.self,
+            Notebook.self,
+            DocumentSource.self,
+            UserNote.self,
+            ChatSession.self,
+            ChatMessage.self
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
@@ -25,8 +30,9 @@ struct Pocket_PageApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            MainView()
         }
         .modelContainer(sharedModelContainer)
     }
 }
+

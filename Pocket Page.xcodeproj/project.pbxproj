@@ -6,6 +6,13 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		DC0CF3B02FFA3838001E0BE8 /* MLXLLM in Frameworks */ = {isa = PBXBuildFile; productRef = DC0CF3AF2FFA3838001E0BE8 /* MLXLLM */; };
+		DC5AE35D2FFA41940099A946 /* MLXHuggingFace in Frameworks */ = {isa = PBXBuildFile; productRef = DC5AE35C2FFA41940099A946 /* MLXHuggingFace */; };
+		DC5AE3602FFA43C00099A946 /* HuggingFace in Frameworks */ = {isa = PBXBuildFile; productRef = DC5AE35F2FFA43C00099A946 /* HuggingFace */; };
+		DCF338862FFA359B00FDA1A3 /* MLX in Frameworks */ = {isa = PBXBuildFile; productRef = DCF338852FFA359B00FDA1A3 /* MLX */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		DC7D34F82FF96316003243E6 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -52,6 +59,10 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DC0CF3B02FFA3838001E0BE8 /* MLXLLM in Frameworks */,
+				DCF338862FFA359B00FDA1A3 /* MLX in Frameworks */,
+				DC5AE35D2FFA41940099A946 /* MLXHuggingFace in Frameworks */,
+				DC5AE3602FFA43C00099A946 /* HuggingFace in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -78,6 +89,7 @@
 				DC7D34EA2FF96316003243E6 /* Pocket Page */,
 				DC7D34FA2FF96316003243E6 /* Pocket PageTests */,
 				DC7D35042FF96316003243E6 /* Pocket PageUITests */,
+				DCF338842FFA359B00FDA1A3 /* Frameworks */,
 				DC7D34E92FF96316003243E6 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -90,6 +102,13 @@
 				DC7D35012FF96316003243E6 /* Pocket PageUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		DCF338842FFA359B00FDA1A3 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -112,6 +131,10 @@
 			);
 			name = "Pocket Page";
 			packageProductDependencies = (
+				DCF338852FFA359B00FDA1A3 /* MLX */,
+				DC0CF3AF2FFA3838001E0BE8 /* MLXLLM */,
+				DC5AE35C2FFA41940099A946 /* MLXHuggingFace */,
+				DC5AE35F2FFA43C00099A946 /* HuggingFace */,
 			);
 			productName = "Pocket Page";
 			productReference = DC7D34E82FF96316003243E6 /* Pocket Page.app */;
@@ -195,6 +218,11 @@
 			);
 			mainGroup = DC7D34DF2FF96316003243E6;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				DC8A1A1D2FFA300F004CB2BF /* XCRemoteSwiftPackageReference "mlx-swift" */,
+				DC0CF3AE2FFA381C001E0BE8 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */,
+				DC5AE35E2FFA43AE0099A946 /* XCRemoteSwiftPackageReference "swift-huggingface" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = DC7D34E92FF96316003243E6 /* Products */;
 			projectDirPath = "";
@@ -570,6 +598,56 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		DC0CF3AE2FFA381C001E0BE8 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/ml-explore/mlx-swift-lm";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 3.31.4;
+			};
+		};
+		DC5AE35E2FFA43AE0099A946 /* XCRemoteSwiftPackageReference "swift-huggingface" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/huggingface/swift-huggingface";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.9.0;
+			};
+		};
+		DC8A1A1D2FFA300F004CB2BF /* XCRemoteSwiftPackageReference "mlx-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/ml-explore/mlx-swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.31.6;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		DC0CF3AF2FFA3838001E0BE8 /* MLXLLM */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DC0CF3AE2FFA381C001E0BE8 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */;
+			productName = MLXLLM;
+		};
+		DC5AE35C2FFA41940099A946 /* MLXHuggingFace */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DC0CF3AE2FFA381C001E0BE8 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */;
+			productName = MLXHuggingFace;
+		};
+		DC5AE35F2FFA43C00099A946 /* HuggingFace */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DC5AE35E2FFA43AE0099A946 /* XCRemoteSwiftPackageReference "swift-huggingface" */;
+			productName = HuggingFace;
+		};
+		DCF338852FFA359B00FDA1A3 /* MLX */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DC8A1A1D2FFA300F004CB2BF /* XCRemoteSwiftPackageReference "mlx-swift" */;
+			productName = MLX;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = DC7D34E02FF96316003243E6 /* Project object */;
 }
