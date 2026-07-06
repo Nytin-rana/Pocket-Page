@@ -3,43 +3,115 @@ import SwiftData
 
 struct MainView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query private var items: [Item] // Kept for SwiftData schema integration
     
-    // Sample hardcoded data matching 20260705_095827.jpg for rendering
-    let sampleCards = [
-        CardData(title: "TAFL", details: "7 sources • May 17, 2026", emoji: "🤖", buttonIcon: "wand.and.stars"),
-        CardData(title: "Java OOP and Programmin...", details: "1 source • May 15, 2026", emoji: "☕️", buttonIcon: "wand.and.stars"),
-        CardData(title: "UHVPE", details: "3 sources • May 6, 2026", emoji: "🧘‍♂️", buttonIcon: "play.fill")
-    ]
+    // Fetch live notebooks directly from the Persistent Schema context
+    @Query(sort: \Notebook.createdAt, order: .reverse) private var notebooks: [Notebook]
     
     @State private var selectedFilter = "Recent"
     let filters = ["Recent", "Favourite", "All"]
     
     @State private var showingCreateNotebook = false
+    
+    // Search states
+    @State private var isSearching = false
+    @State private var searchQuery = ""
+
+    // Dynamic filtering AND Search computed property
+    private var filteredNotebooks: [Notebook] {
+        // 1. Apply primary navigation filter first
+        var baseNotebooks: [Notebook]
+        switch selectedFilter {
+        case "Recent":
+            baseNotebooks = Array(notebooks.prefix(5))
+        case "Favourite":
+            baseNotebooks = notebooks.filter { $0.isFavorite }
+        default:
+            baseNotebooks = notebooks
+        }
+        
+        // 2. Apply search text subset matching if query exists
+        let cleanedQuery = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !cleanedQuery.isEmpty {
+            return baseNotebooks.filter {
+                $0.title.localizedCaseInsensitiveContains(cleanedQuery)
+            }
+        }
+        
+        return baseNotebooks
+    }
 
     var body: some View {
         NavigationStack {
             ZStack {
-                // Background color matched exactly to the image
                 Color(red: 26/255, green: 30/255, blue: 36/255)
                     .ignoresSafeArea()
                 
                 VStack(spacing: 0) {
-                    // Header Bar
-                    HStack {
-                        Image("logo") // Fallback text/system view if asset is missing
-                            .resizable()
-                            .scaledToFit()
-                            .frame(height: 35)
-                        
-                        Spacer()
-                        
-                        Image(systemName: "magnifyingglass")
-                            .font(.system(size: 22, weight: .light))
-                            .foregroundColor(.white.opacity(0.8))
+                    // --- Dynamic Header Bar ---
+                    if isSearching {
+                        // Inline Search Field Layer
+                        HStack(spacing: 12) {
+                            HStack {
+                                Image(systemName: "magnifyingglass")
+                                    .foregroundColor(.white.opacity(0.4))
+                                
+                                TextField("Search notebooks...", text: $searchQuery)
+                                    .foregroundColor(.white)
+                                    .tint(.white) // Cursor color
+                                    .autocorrectionDisabled()
+                                
+                                if !searchQuery.isEmpty {
+                                    Button(action: { searchQuery = "" }) {
+                                        Image(systemName: "xmark.circle.fill")
+                                            .foregroundColor(.white.opacity(0.5))
+                                    }
+                                }
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 10)
+                            
+                            .liquidGlassCapsule()
+                            
+                            Button("Cancel") {
+                                withAnimation(.spring(duration: 0.25)) {
+                                    searchQuery = ""
+                                    isSearching = false
+                                }
+                            }
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundColor(.white)
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.top, 10)
+                    } else {
+                        // Standard Branding Header Layer
+                        HStack {
+                            Image("logo") // Custom image from Assets.xcassets
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 44, height: 44)
+                                .foregroundColor(.white)
+                            
+                            Text("Pocket Page")
+                                .font(.system(size: 22, weight: .bold))
+                                .foregroundColor(.white)
+                            
+                            Spacer()
+                            
+                            Button(action: {
+                                withAnimation(.spring(duration: 0.25)) {
+                                    isSearching = true
+                                }
+                            }) {
+                                Image(systemName: "magnifyingglass")
+                                    .font(.system(size: 22, weight: .light))
+                                    .foregroundColor(.white.opacity(0.8))
+                                    .frame(width: 44, height: 44, alignment: .trailing)
+                            }
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.top, 10)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 10)
                     
                     // Filter Horizontal Scroll Segment
                     ScrollView(.horizontal, showsIndicators: false) {
@@ -66,37 +138,50 @@ struct MainView: View {
                     // List Cards ScrollView
                     ScrollView {
                         VStack(spacing: 14) {
-                            ForEach(sampleCards) { card in
-                                HStack(spacing: 16) {
-                                    // Emoji Container
-                                    Text(card.emoji)
-                                        .font(.system(size: 28))
-                                        .frame(width: 45, height: 45)
-                                    
-                                    // Text Content
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text(card.title)
-                                            .font(.system(size: 18, weight: .semibold))
-                                            .foregroundColor(.white)
-                                        Text(card.details)
-                                            .font(.system(size: 13))
-                                            .foregroundColor(.white.opacity(0.5))
+                            if filteredNotebooks.isEmpty {
+                                Text(emptyStateMessage)
+                                    .font(.system(size: 15))
+                                    .foregroundColor(.white.opacity(0.4))
+                                    .multilineTextAlignment(.center)
+                                    .padding(.top, 60)
+                            } else {
+                                ForEach(filteredNotebooks) { notebook in
+                                    NavigationLink(destination: NotebookView(notebook: notebook)) {
+                                        HStack(spacing: 16) {
+                                            Text("📚")
+                                                .font(.system(size: 28))
+                                                .frame(width: 45, height: 45)
+                                            
+                                            VStack(alignment: .leading, spacing: 4) {
+                                                Text(notebook.title)
+                                                    .font(.system(size: 18, weight: .semibold))
+                                                    .foregroundColor(.white)
+                                                
+                                                Text("\(notebook.sources.count) sources • \(formattedDate(notebook.createdAt))")
+                                                    .font(.system(size: 13))
+                                                    .foregroundColor(.white.opacity(0.5))
+                                            }
+                                            
+                                            Spacer()
+                                            
+                                            if notebook.isFavorite {
+                                                Image(systemName: "star.fill")
+                                                    .font(.system(size: 14))
+                                                    .foregroundColor(.yellow.opacity(0.8))
+                                                    .padding(.trailing, 4)
+                                            }
+                                            
+                                            Image(systemName: "chevron.right")
+                                                .font(.system(size: 14, weight: .bold))
+                                                .foregroundColor(.white.opacity(0.4))
+                                        }
+                                        .padding(.horizontal, 16)
+                                        .padding(.vertical, 20)
+                                        .background(Color.white.opacity(0.03))
+                                        .cornerRadius(12)
                                     }
-                                    
-                                    Spacer()
-                                    
-                                    // Action Button
-                                    Button(action: {}) {
-                                        Image(systemName: card.buttonIcon)
-                                            .font(.system(size: 14, weight: .bold))
-                                            .foregroundColor(.white)
-                                            .frame(width: 40, height: 40)
-                                            .background(Color.white.opacity(0.1))
-                                            .clipShape(Circle())
-                                    }
+                                    .buttonStyle(PlainButtonStyle())
                                 }
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 20)
                             }
                         }
                         .padding(.horizontal, 20)
@@ -106,13 +191,8 @@ struct MainView: View {
                     
                     // Bottom Sticky Action Bar
                     HStack(spacing: 16) {
-                        
-                        
-                        
-                        // "Create New" Button with liquid glass capsule background
                         Button(action: {
                             showingCreateNotebook = true
-                            print("btn pressed")
                         }) {
                             HStack(spacing: 8) {
                                 Image(systemName: "plus")
@@ -126,67 +206,83 @@ struct MainView: View {
                             .contentShape(Capsule())
                         }
                         .liquidGlassCapsule()
-                        
                     }
                     .padding(.bottom, 20)
                 }
             }
-            // Sheet to present CreateNotebookBottomSheet when showingCreateNotebook is true
             .sheet(isPresented: $showingCreateNotebook) {
                 CreateNotebookBottomSheet(isPresented: $showingCreateNotebook)
             }
         }
     }
+    
+    // Contextual empty state text based on filters & search queries
+    private var emptyStateMessage: String {
+        if !searchQuery.isEmpty {
+            return "No matching notebooks found for\n\"\(searchQuery)\""
+        }
+        
+        switch selectedFilter {
+        case "Recent":
+            return "No recent notebooks.\nTap 'Create New' below to start!"
+        case "Favourite":
+            return "No favorite notebooks yet.\nMark them as favorites inside your notebooks!"
+        default:
+            return "No notebooks created yet.\nTap 'Create New' below to start!"
+        }
+    }
+    
+    private func formattedDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        return formatter.string(from: date)
+    }
 }
 
-// MARK: - Supporting Data Structures
-struct CardData: Identifiable {
-    let id = UUID()
-    let title: String
-    let details: String
-    let emoji: String
-    let buttonIcon: String
-}
-
-// MARK: - Liquid Glass Modifier and View Extension
 struct LiquidGlassModifier: ViewModifier {
     var cornerRadius: CGFloat
     
     func body(content: Content) -> some View {
         content
+            // 1. Give text/content breathing room before effects
+            .padding(.horizontal, 4)
             .background(
-                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .fill(.ultraThinMaterial)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            gradient: Gradient(colors: [Color.white.opacity(0.08), Color.white.opacity(0.02)]),
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
+                ZStack {
+                    // 2. Base material layer doing the heavy lifting
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                        .fill(.ultraThinMaterial)
+                        .environment(\.colorScheme, .dark)
+                    
+                    // 3. Keep the inner tint gradient BEHIND the text, not on top of it
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                gradient: Gradient(colors: [.white.opacity(0.06), .white.opacity(0.01)]),
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
                         )
-                    ).allowsHitTesting(false)
+                }
             )
+            // 4. Clean, crisp border overlay
             .overlay(
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                     .stroke(
                         LinearGradient(
                             gradient: Gradient(stops: [
-                                .init(color: Color.white.opacity(0.25), location: 0),
-                                .init(color: Color.clear, location: 0.5),
-                                .init(color: Color.white.opacity(0.05), location: 1)
+                                .init(color: .white.opacity(0.25), location: 0),
+                                .init(color: .clear, location: 0.5),
+                                .init(color: .white.opacity(0.05), location: 1)
                             ]),
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         ),
                         lineWidth: 1.2
-                    ).allowsHitTesting(false)
+                    )
             )
-            .shadow(color: Color.black.opacity(0.2), radius: 10, x: 0, y: 8)
+            .shadow(color: Color.black.opacity(0.25), radius: 12, x: 0, y: 8)
     }
 }
-
 extension View {
     func liquidGlassCircle() -> some View {
         self.modifier(LiquidGlassModifier(cornerRadius: 9999))
@@ -199,5 +295,4 @@ extension View {
 
 #Preview {
     MainView()
-        .modelContainer(for: Item.self, inMemory: true)
 }

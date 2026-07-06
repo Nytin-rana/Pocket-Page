@@ -1,8 +1,11 @@
 import SwiftUI
 import UniformTypeIdentifiers
 import Foundation
+import SwiftData
+import PDFKit
 
 struct CreateNotebookBottomSheet: View {
+    @Environment(\.modelContext) private var modelContext
     @Binding var isPresented: Bool
     @State private var notebookName: String = ""
     @State private var selectedFiles: [URL] = []
@@ -72,11 +75,11 @@ struct CreateNotebookBottomSheet: View {
                         
                         // --- Option Buttons Stack ---
                         VStack(spacing: 12) {
-                            sourceButton(title: "PDF", iconName: "doc.pdf", type: .pdf) {
+                            sourceButton(title: "PDF", iconName: "doc.viewfinder", type: .pdf) {
                                 triggerPicker(for: [.pdf])
                             }
                             
-                            sourceButton(title: "Markdown File", iconName: "doc.text.desktop", type: .plainText) {
+                            sourceButton(title: "Markdown File", iconName: "doc.text", type: .plainText) {
                                 triggerPicker(for: [.plainText, .text])
                             }
                             
@@ -89,16 +92,14 @@ struct CreateNotebookBottomSheet: View {
                         
                         // --- Create Notebook Capsule Button ---
                         Button(action: {
-                            // TODO: Add your notebook creation logic here
-                            print("Notebook \(notebookName) created with \(selectedFiles.count) files.")
-                            isPresented = false
+                            createNotebookAndIngest()
                         }) {
                             Text("Create Notebook")
                                 .font(.system(size: 16, weight: .bold))
-                                .foregroundColor(.black) // Black text
+                                .foregroundColor(.black)
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 52)
-                                .background(accentGreen) // Green background
+                                .background(accentGreen)
                                 .clipShape(Capsule())
                         }
                         .disabled(notebookName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || selectedFiles.isEmpty)
@@ -123,6 +124,65 @@ struct CreateNotebookBottomSheet: View {
                 print("Error picking document: \(error.localizedDescription)")
             }
         }
+    }
+    
+    func extractTextFromPDF(at url: URL) -> String {
+        guard let document = PDFDocument(url: url) else { return "" }
+        var completeText = ""
+        for i in 0..<document.pageCount {
+            if let page = document.page(at: i), let pageText = page.string {
+                completeText += pageText + "\n"
+            }
+        }
+        return completeText
+    }
+    
+    // MARK: - Notebook Creation & Embedding Logic
+    private func createNotebookAndIngest() {
+        let newNotebook = Notebook(title: notebookName)
+        
+        let initialChatSession = ChatSession(title: "Chat context: \(notebookName)")
+        newNotebook.chatSessions.append(initialChatSession)
+        
+        for url in selectedFiles {
+            guard url.startAccessingSecurityScopedResource() else { continue }
+            defer { url.stopAccessingSecurityScopedResource() }
+            
+            var extractedText = ""
+            let fileExtension = url.pathExtension.lowercased()
+            
+            if fileExtension == "pdf" {
+                extractedText = extractTextFromPDF(at: url)
+            } else {
+                if let textContent = try? String(contentsOf: url, encoding: .utf8) {
+                    extractedText = textContent
+                }
+            }
+            
+            let documentSource = DocumentSource(
+                fileName: url.lastPathComponent,
+                fileType: fileExtension,
+                rawTextContent: extractedText
+            )
+            
+            newNotebook.sources.append(documentSource)
+            
+            // --- FIX START: Create an immutable copy for the Sendable closure ---
+            let textToIngest = extractedText
+            
+            Task {
+                await VectorDatabase.shared.ingestDocument(
+                    text: textToIngest, // Use the immutable constant here
+                    notebookId: newNotebook.id,
+                    sourceId: documentSource.id
+                )
+            }
+            // --- FIX END ---
+        }
+        modelContext.insert(newNotebook)
+        try? modelContext.save()
+        
+        isPresented = false
     }
     
     @ViewBuilder
@@ -154,18 +214,15 @@ struct CreateNotebookBottomSheet: View {
         if types.contains(.data) || types.contains(.content) { return true }
         
         switch filter {
-        case .pdf:
-            return types.contains(.pdf)
-        case .text:
-            return types.contains(.plainText) || types.contains(.text)
-        case .image:
-            return false
-        case .any:
-            return true
+        case .pdf: return types.contains(.pdf)
+        case .text: return types.contains(.plainText) || types.contains(.text)
+        case .image: return false
+        case .any: return true
         }
     }
 }
 
+// MARK: - Restored Helper Structural Filter
 struct TypeFilter {
     enum Element: Equatable, CaseIterable {
         case pdf, text, image, any
@@ -188,8 +245,4 @@ struct TypeFilter {
         default: return .any
         }
     }
-}
-
-#Preview {
-    CreateNotebookBottomSheet(isPresented: .constant(true))
 }

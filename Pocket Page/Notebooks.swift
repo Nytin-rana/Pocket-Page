@@ -6,6 +6,8 @@ class Notebook {
     var id: UUID
     var title: String
     var createdAt: Date
+    var isFavorite: Bool
+    
     
     // Relationships: If a Notebook is deleted, delete all its sources, notes, and chats
     @Relationship(deleteRule: .cascade) var sources: [DocumentSource] = []
@@ -16,6 +18,7 @@ class Notebook {
         self.id = UUID()
         self.title = title
         self.createdAt = Date()
+        self.isFavorite = false
     }
 }
 
@@ -94,6 +97,17 @@ class ChatMessage {
         self.text = text
         self.isUser = isUser
         self.timestamp = Date()
+    }
+}
+
+
+
+@Model
+final class Item {
+    var timestamp: Date
+    
+    init(timestamp: Date) {
+        self.timestamp = timestamp
     }
 }
 

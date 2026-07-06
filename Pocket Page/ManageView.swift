@@ -6,40 +6,62 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct ManageView: View {
-    @State private var showingCreateNotebook: Bool = false
+    var notebook: Notebook // Inject current notebook context
+    @Environment(\.modelContext) private var modelContext
+    @State private var showingAddFiles: Bool = false
+    
     var body: some View {
         VStack {
-            
-            
-            List {
-                HStack {
-                    Text("Source.pdf")
-                    Spacer()
-                    Image(systemName: "trash").foregroundStyle(Color.red)
+            if notebook.sources.isEmpty {
+                // Empty state if no documents are linked
+                VStack(spacing: 12) {
+                    Image(systemName: "doc.badge.plus")
+                        .font(.system(size: 40))
+                        .foregroundColor(.gray)
+                    Text("No sources attached to this notebook.")
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundColor(.gray)
                 }
-                HStack {
-                    Text("Source.txt")
-                    Spacer()
-                    Image(systemName: "trash").foregroundStyle(Color.red)
+                .frame(maxHeight: .infinity)
+            } else {
+                // Dynamic listing of resources
+                List {
+                    ForEach(notebook.sources) { source in
+                        HStack {
+                            Image(systemName: source.fileType == "pdf" ? "doc.viewfinder" : "doc.text")
+                                .foregroundColor(.white.opacity(0.7))
+                            
+                            Text(source.fileName)
+                                .foregroundColor(.white)
+                            
+                            Spacer()
+                            
+                            Button(action: {
+                                deleteSource(source)
+                            }) {
+                                Image(systemName: "trash")
+                                    .foregroundStyle(Color.red)
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                        }
+                        
+                    }
                 }
-                HStack {
-                    Text("Source.md")
-                    Spacer()
-                    Image(systemName: "trash").foregroundStyle(Color.red)
-                }
+                .scrollContentBackground(.hidden)
                 
             }
             
+            // Add File / Create Button Container
             Button(action: {
-                showingCreateNotebook = true
-                print("btn pressed")
+                showingAddFiles = true
             }) {
                 HStack(spacing: 8) {
                     Image(systemName: "plus")
                         .font(.system(size: 16, weight: .bold))
-                    Text("Create New")
+                    Text("Add Sources")
                         .font(.system(size: 16, weight: .semibold))
                 }
                 .foregroundColor(.white)
@@ -49,18 +71,19 @@ struct ManageView: View {
             }
             .liquidGlassCapsule()
             .padding(24)
-            .sheet(isPresented: $showingCreateNotebook) {
-                CreateNotebookBottomSheet(isPresented: $showingCreateNotebook)
-                
-                
-                
-                
-                
+            .sheet(isPresented: $showingAddFiles) {
+                AddFileBottomSheet(isPresented: $showingAddFiles, notebook: notebook)
             }
         }
+       
     }
-}
-
-#Preview {
-    ManageView()
+    
+    /// Safely deletes document tracking metadata elements from database context structures
+    private func deleteSource(_ source: DocumentSource) {
+        if let index = notebook.sources.firstIndex(where: { $0.id == source.id }) {
+            notebook.sources.remove(at: index)
+            modelContext.delete(source)
+            try? modelContext.save()
+        }
+    }
 }

@@ -8,15 +8,16 @@
 import SwiftUI
 
 struct SourceView: View {
+    var notebook: Notebook
+
     var body: some View {
-        List {
-            Text("Source.pdf")
-            Text("Source.txt")
-            Text("Source.md")
+        List(notebook.sources) { source in // <-- Loop dynamically
+            HStack {
+                Image(systemName: source.fileType == "pdf" ? "doc.viewfinder" : "doc.text")
+                Text(source.fileName)
+            }
         }
     }
 }
 
-#Preview {
-    SourceView()
-}
+

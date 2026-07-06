@@ -31,6 +31,7 @@ struct Pocket_PageApp: App {
     var body: some Scene {
         WindowGroup {
             MainView()
+                .preferredColorScheme(.dark)
         }
         .modelContainer(sharedModelContainer)
     }

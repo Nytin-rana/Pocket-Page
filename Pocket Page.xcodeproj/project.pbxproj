@@ -8,8 +8,11 @@
 
 /* Begin PBXBuildFile section */
 		DC0CF3B02FFA3838001E0BE8 /* MLXLLM in Frameworks */ = {isa = PBXBuildFile; productRef = DC0CF3AF2FFA3838001E0BE8 /* MLXLLM */; };
+		DC3B9B092FFB7619006C011B /* Tokenizers in Frameworks */ = {isa = PBXBuildFile; productRef = DC3B9B082FFB7619006C011B /* Tokenizers */; };
+		DC3B9B0B2FFB76BF006C011B /* Hub in Frameworks */ = {isa = PBXBuildFile; productRef = DC3B9B0A2FFB76BF006C011B /* Hub */; };
 		DC5AE35D2FFA41940099A946 /* MLXHuggingFace in Frameworks */ = {isa = PBXBuildFile; productRef = DC5AE35C2FFA41940099A946 /* MLXHuggingFace */; };
 		DC5AE3602FFA43C00099A946 /* HuggingFace in Frameworks */ = {isa = PBXBuildFile; productRef = DC5AE35F2FFA43C00099A946 /* HuggingFace */; };
+		DCF2F68A2FFC0A8F00D366B8 /* Qwen2.5-0.5B-Instruct-4bit in Resources */ = {isa = PBXBuildFile; fileRef = DCF2F6892FFC0A8F00D366B8 /* Qwen2.5-0.5B-Instruct-4bit */; };
 		DCF338862FFA359B00FDA1A3 /* MLX in Frameworks */ = {isa = PBXBuildFile; productRef = DCF338852FFA359B00FDA1A3 /* MLX */; };
 /* End PBXBuildFile section */
 
@@ -34,6 +37,7 @@
 		DC7D34E82FF96316003243E6 /* Pocket Page.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Pocket Page.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		DC7D34F72FF96316003243E6 /* Pocket PageTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Pocket PageTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		DC7D35012FF96316003243E6 /* Pocket PageUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Pocket PageUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		DCF2F6892FFC0A8F00D366B8 /* Qwen2.5-0.5B-Instruct-4bit */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "Qwen2.5-0.5B-Instruct-4bit"; path = "../Qwen2.5-0.5B-Instruct-4bit"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -59,10 +63,12 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DC3B9B0B2FFB76BF006C011B /* Hub in Frameworks */,
 				DC0CF3B02FFA3838001E0BE8 /* MLXLLM in Frameworks */,
 				DCF338862FFA359B00FDA1A3 /* MLX in Frameworks */,
 				DC5AE35D2FFA41940099A946 /* MLXHuggingFace in Frameworks */,
 				DC5AE3602FFA43C00099A946 /* HuggingFace in Frameworks */,
+				DC3B9B092FFB7619006C011B /* Tokenizers in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -86,6 +92,7 @@
 		DC7D34DF2FF96316003243E6 = {
 			isa = PBXGroup;
 			children = (
+				DCF2F6892FFC0A8F00D366B8 /* Qwen2.5-0.5B-Instruct-4bit */,
 				DC7D34EA2FF96316003243E6 /* Pocket Page */,
 				DC7D34FA2FF96316003243E6 /* Pocket PageTests */,
 				DC7D35042FF96316003243E6 /* Pocket PageUITests */,
@@ -135,6 +142,8 @@
 				DC0CF3AF2FFA3838001E0BE8 /* MLXLLM */,
 				DC5AE35C2FFA41940099A946 /* MLXHuggingFace */,
 				DC5AE35F2FFA43C00099A946 /* HuggingFace */,
+				DC3B9B082FFB7619006C011B /* Tokenizers */,
+				DC3B9B0A2FFB76BF006C011B /* Hub */,
 			);
 			productName = "Pocket Page";
 			productReference = DC7D34E82FF96316003243E6 /* Pocket Page.app */;
@@ -222,6 +231,7 @@
 				DC8A1A1D2FFA300F004CB2BF /* XCRemoteSwiftPackageReference "mlx-swift" */,
 				DC0CF3AE2FFA381C001E0BE8 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */,
 				DC5AE35E2FFA43AE0099A946 /* XCRemoteSwiftPackageReference "swift-huggingface" */,
+				DC3B9B072FFB7606006C011B /* XCRemoteSwiftPackageReference "swift-transformers" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = DC7D34E92FF96316003243E6 /* Products */;
@@ -240,6 +250,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DCF2F68A2FFC0A8F00D366B8 /* Qwen2.5-0.5B-Instruct-4bit in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -608,6 +619,14 @@
 				minimumVersion = 3.31.4;
 			};
 		};
+		DC3B9B072FFB7606006C011B /* XCRemoteSwiftPackageReference "swift-transformers" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/huggingface/swift-transformers";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.3.3;
+			};
+		};
 		DC5AE35E2FFA43AE0099A946 /* XCRemoteSwiftPackageReference "swift-huggingface" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/huggingface/swift-huggingface";
@@ -631,6 +650,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = DC0CF3AE2FFA381C001E0BE8 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */;
 			productName = MLXLLM;
+		};
+		DC3B9B082FFB7619006C011B /* Tokenizers */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DC3B9B072FFB7606006C011B /* XCRemoteSwiftPackageReference "swift-transformers" */;
+			productName = Tokenizers;
+		};
+		DC3B9B0A2FFB76BF006C011B /* Hub */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DC3B9B072FFB7606006C011B /* XCRemoteSwiftPackageReference "swift-transformers" */;
+			productName = Hub;
 		};
 		DC5AE35C2FFA41940099A946 /* MLXHuggingFace */ = {
 			isa = XCSwiftPackageProductDependency;
