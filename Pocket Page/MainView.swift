@@ -4,7 +4,7 @@ import SwiftData
 struct MainView: View {
     @Environment(\.modelContext) private var modelContext
     
-    // Fetch live notebooks directly from the Persistent Schema context
+    
     @Query(sort: \Notebook.createdAt, order: .reverse) private var notebooks: [Notebook]
     
     @State private var selectedFilter = "Recent"
@@ -18,7 +18,7 @@ struct MainView: View {
 
     // Dynamic filtering AND Search computed property
     private var filteredNotebooks: [Notebook] {
-        // 1. Apply primary navigation filter first
+        
         var baseNotebooks: [Notebook]
         switch selectedFilter {
         case "Recent":
@@ -29,7 +29,7 @@ struct MainView: View {
             baseNotebooks = notebooks
         }
         
-        // 2. Apply search text subset matching if query exists
+        
         let cleanedQuery = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
         if !cleanedQuery.isEmpty {
             return baseNotebooks.filter {
@@ -57,7 +57,7 @@ struct MainView: View {
                                 
                                 TextField("Search notebooks...", text: $searchQuery)
                                     .foregroundColor(.white)
-                                    .tint(.white) // Cursor color
+                                    .tint(.white)
                                     .autocorrectionDisabled()
                                 
                                 if !searchQuery.isEmpty {
@@ -86,11 +86,28 @@ struct MainView: View {
                     } else {
                         // Standard Branding Header Layer
                         HStack {
-                            Image("logo") // Custom image from Assets.xcassets
+#if DEBUG
+
+(Group {
+    if UIImage(named: "logo") != nil {
+        Image("logo")
+            .resizable()
+            .scaledToFit()
+    } else {
+        Image(systemName: "book.closed")
+            .resizable()
+            .scaledToFit()
+    }
+})
+    .frame(width: 44, height: 44)
+    .foregroundColor(.white)
+#else
+                            Image("logo")
                                 .resizable()
                                 .scaledToFit()
                                 .frame(width: 44, height: 44)
                                 .foregroundColor(.white)
+#endif
                             
                             Text("Pocket Page")
                                 .font(.system(size: 22, weight: .bold))
@@ -189,7 +206,7 @@ struct MainView: View {
                     
                     Spacer()
                     
-                    // Bottom Sticky Action Bar
+                    
                     HStack(spacing: 16) {
                         Button(action: {
                             showingCreateNotebook = true
@@ -216,7 +233,7 @@ struct MainView: View {
         }
     }
     
-    // Contextual empty state text based on filters & search queries
+    
     private var emptyStateMessage: String {
         if !searchQuery.isEmpty {
             return "No matching notebooks found for\n\"\(searchQuery)\""
@@ -244,16 +261,16 @@ struct LiquidGlassModifier: ViewModifier {
     
     func body(content: Content) -> some View {
         content
-            // 1. Give text/content breathing room before effects
+            
             .padding(.horizontal, 4)
             .background(
                 ZStack {
-                    // 2. Base material layer doing the heavy lifting
+                    
                     RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                         .fill(.ultraThinMaterial)
                         .environment(\.colorScheme, .dark)
                     
-                    // 3. Keep the inner tint gradient BEHIND the text, not on top of it
+                    
                     RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                         .fill(
                             LinearGradient(
@@ -264,7 +281,7 @@ struct LiquidGlassModifier: ViewModifier {
                         )
                 }
             )
-            // 4. Clean, crisp border overlay
+            
             .overlay(
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                     .stroke(
@@ -294,5 +311,17 @@ extension View {
 }
 
 #Preview {
+    
+    let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
+
+    
+    let container = try! ModelContainer(
+        for: Notebook.self,
+        configurations: configuration
+    )
+
+   
     MainView()
+        .modelContainer(container)
 }
+

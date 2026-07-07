@@ -8,12 +8,12 @@ struct AddFileBottomSheet: View {
     @Environment(\.modelContext) private var modelContext
     @Binding var isPresented: Bool
     
-    // Explicitly pass the active Notebook reference to append data directly
+    
     let notebook: Notebook
     
     @State private var selectedFiles: [URL] = []
     
-    // File Picker Presentation States
+    
     @State private var isFilePickerPresented = false
     @State private var allowedTypes: [UTType] = [.data]
     
@@ -168,7 +168,7 @@ struct AddFileBottomSheet: View {
                 rawTextContent: extractedText
             )
             
-            // Append right into the targeted entity directly
+            
             notebook.sources.append(documentSource)
             
             let textToIngest = extractedText

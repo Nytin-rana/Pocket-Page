@@ -4,11 +4,11 @@ import SwiftUI
 import SwiftData
 
 struct ChatView: View {
-    var notebook: Notebook // Received from NotebookView
+    var notebook: Notebook
     @State var text: String = ""
-    @State private var isThinking: Bool = false // Tracks model loading/generation state
+    @State private var isThinking: Bool = false
     
-//    // Instantiate your LocalQwenLoader pipeline
+    // Instantiate your LocalQwenLoader pipeline
     private let qwenLoader = LocalQwenLoader()
     
     // Dynamically retrieve the active chat session safely
@@ -30,14 +30,14 @@ struct ChatView: View {
         
         Task {
             do {
-                // (Optional but Recommended) Perform vector search over the notebook's documents
+                
                 let relevantChunks = await VectorDatabase.shared.search(query: text1, notebookId: notebook.id)
                 let contextString = relevantChunks.joined(separator: "\n\n")
                 
                 // Construct a prompt leveraging retrieved context
                 let systemPrompt = "You are a helpful notebook assistant. Use the following source context to answer the question if applicable.\n\nContext:\n\(contextString)"
                 
-                // Pre-load the model container if needed (usually handled globally, but safe here)
+                
                 try await qwenLoader.loadModel()
                 
                 // Create an empty AI message placeholder to stream text into
@@ -45,11 +45,11 @@ struct ChatView: View {
                 
                 await MainActor.run {
                     session.messages.append(aiMessage)
-                    // Turn off thinking animation as text begins streaming
+                    
                     isThinking = false
                 }
                 
-                // Stream chunks into the placeholder message
+                
                 _ = try await qwenLoader.generateResponse(
                     prompt: text1,
                     systemPrompt: systemPrompt
@@ -57,7 +57,7 @@ struct ChatView: View {
                     aiMessage.text += token
                 }
                 
-                // Persist changes to SwiftData context
+                
                 try? aiMessage.modelContext?.save()
                 
             } catch {

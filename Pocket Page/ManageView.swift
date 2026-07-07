@@ -9,7 +9,7 @@ import SwiftUI
 import SwiftData
 
 struct ManageView: View {
-    var notebook: Notebook // Inject current notebook context
+    var notebook: Notebook
     @Environment(\.modelContext) private var modelContext
     @State private var showingAddFiles: Bool = false
     
@@ -78,7 +78,7 @@ struct ManageView: View {
        
     }
     
-    /// Safely deletes document tracking metadata elements from database context structures
+    
     private func deleteSource(_ source: DocumentSource) {
         if let index = notebook.sources.firstIndex(where: { $0.id == source.id }) {
             notebook.sources.remove(at: index)

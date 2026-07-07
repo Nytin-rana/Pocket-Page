@@ -6,15 +6,15 @@ struct NotebookView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     
-    // Action states
     @State private var showRenameAlert = false
     @State private var newNotebookName = ""
     
+    @State private var exportURL: URL? = nil
+    @State private var showShareSheet = false
+    
     var body: some View {
         VStack(spacing: 0) {
-            // --- Custom Navigation Header (Matches 20260706_130235.jpg) ---
             HStack(spacing: 16) {
-                // Back Button
                 Button(action: { dismiss() }) {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 18, weight: .semibold))
@@ -24,15 +24,13 @@ struct NotebookView: View {
                         .clipShape(Circle())
                 }
                 
-                // Notebook Title
-                Text(notebook.title) // Assuming your model uses .title or .name
+                Text(notebook.title)
                     .font(.system(size: 24, weight: .bold))
                     .foregroundColor(.white)
                     .lineLimit(1)
                 
                 Spacer()
                 
-                // Three Dots Action Popup Menu (Matches 20260706_130258.jpg)
                 Menu {
                     Button(action: {
                         favtoggle()
@@ -44,6 +42,12 @@ struct NotebookView: View {
                         showRenameAlert = true
                     }) {
                         Label("Rename notebook", systemImage: "pencil")
+                    }
+                    
+                    Button(action: {
+                        saveNotebookToJSON()
+                    }) {
+                        Label("Save notebook", systemImage: "square.and.arrow.up")
                     }
                     
                     Button(role: .destructive, action: {
@@ -59,7 +63,7 @@ struct NotebookView: View {
                     }
                 } label: {
                     Image(systemName: "ellipsis")
-                        .rotationEffect(.degrees(90)) // Vertically oriented dots
+                        .rotationEffect(.degrees(90))
                         .font(.system(size: 20, weight: .bold))
                         .foregroundColor(.white)
                         .frame(width: 40, height: 40)
@@ -68,9 +72,8 @@ struct NotebookView: View {
             .padding(.horizontal, 16)
             .padding(.top, 8)
             .padding(.bottom, 12)
-            .background(Color.black) // Matches dark interface background
+            .background(Color.black)
             
-            // --- Bottom Content Tabs (From source 2) ---
             TabView {
                 ChatView(notebook: notebook)
                     .tabItem {
@@ -79,17 +82,16 @@ struct NotebookView: View {
                             Text("Chat").font(.caption)
                         }
                     }
-                SourceView(notebook: notebook) 
+                SourceView(notebook: notebook)
                     .tabItem {
                         VStack {
-                            Image(systemName: "folder").environment(\.symbolVariants, .none) 
-                            Text("Sources").font(.caption) 
+                            Image(systemName: "folder").environment(\.symbolVariants, .none)
+                            Text("Sources").font(.caption)
                         }
                     }
-                ManageView(notebook: notebook) 
-                    .tabItem { Label("Manage", systemImage: "square.and.pencil") } 
+                ManageView(notebook: notebook)
+                    .tabItem { Label("Manage", systemImage: "square.and.pencil") }
             }
-            // Optional styling to match the unified floating tab bar style in screenshots
             .onAppear {
                 let appearance = UITabBarAppearance()
                 appearance.configureWithOpaqueBackground()
@@ -98,9 +100,8 @@ struct NotebookView: View {
                 UITabBar.appearance().scrollEdgeAppearance = appearance
             }
         }
-        .navigationBarHidden(true) // Hide the default navigation header bar
+        .navigationBarHidden(true)
         .background(Color.black.ignoresSafeArea())
-        // Rename Dialog Implementation
         .alert("Rename Notebook", isPresented: $showRenameAlert) {
             TextField("Notebook Name", text: $newNotebookName)
             Button("Cancel", role: .cancel) { }
@@ -111,29 +112,72 @@ struct NotebookView: View {
                 }
             }
         }
+        .sheet(isPresented: $showShareSheet) {
+            if let exportURL = exportURL {
+                ShareSheetView(activityItems: [exportURL])
+            }
+        }
     }
     
-    // MARK: - Logic Functions
     private func favtoggle() {
-        // Toggles the favorite boolean state
         notebook.isFavorite.toggle()
-        
-        // Explicitly persist the change to SwiftData
         try? modelContext.save()
     }
     
+    
+        private func saveNotebookToJSON() {
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = .prettyPrinted
+            
+            //  Clean up any previous export file FIRST before creating a new one
+            cleanUpTemporaryFile()
+            
+            do {
+                let data = try encoder.encode(notebook)
+                
+                let safeTitle = notebook.title.components(separatedBy: CharacterSet.alphanumerics.inverted).joined(separator: "_")
+                let filename = "\(safeTitle)_notebook.json"
+                
+                let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+                let targetURL = documentsDirectory.appendingPathComponent(filename)
+                
+                try data.write(to: targetURL)
+                
+                DispatchQueue.main.async {
+                    self.exportURL = targetURL
+                    self.showShareSheet = true
+                }
+            } catch {
+                print("Failed to serialize and save data payload: \(error.localizedDescription)")
+            }
+        }
+        
+        private func cleanUpTemporaryFile() {
+            if let url = exportURL {
+                try? FileManager.default.removeItem(at: url)
+                self.exportURL = nil
+            }
+        }
     private func deleteNotebook() {
         modelContext.delete(notebook)
         try? modelContext.save()
-        dismiss() // Pop back to main dashboard
+        dismiss()
     }
     
     private func clearChatHistory() {
-        // Clears referenced chat sessions associated with SwiftData model
         notebook.chatSessions.removeAll()
         try? modelContext.save()
-        
-        // Triggers UI refresh safely by reloading context parameters
         modelContext.processPendingChanges()
     }
+}
+
+struct ShareSheetView: UIViewControllerRepresentable {
+    var activityItems: [Any]
+    var applicationActivities: [UIActivity]? = nil
+    
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: activityItems, applicationActivities: applicationActivities)
+    }
+    
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }

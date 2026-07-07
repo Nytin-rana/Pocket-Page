@@ -12,6 +12,7 @@ struct CreateNotebookBottomSheet: View {
     
     // File Picker Presentation States
     @State private var isFilePickerPresented = false
+    @State private var isLoadNotebookPickerPresented = false
     @State private var allowedTypes: [UTType] = [.data]
     
     private let backgroundColor = Color(red: 19/255, green: 24/255, blue: 30/255)
@@ -26,7 +27,6 @@ struct CreateNotebookBottomSheet: View {
             backgroundColor.ignoresSafeArea()
             
             VStack(spacing: 0) {
-                // --- Header Close Button ---
                 HStack {
                     Spacer()
                     Button(action: { isPresented = false }) {
@@ -41,7 +41,6 @@ struct CreateNotebookBottomSheet: View {
                 
                 ScrollView {
                     VStack(spacing: 24) {
-                        // --- Title Header ---
                         VStack(spacing: 4) {
                             Text("Create a notebook")
                                 .font(.system(size: 24, weight: .regular))
@@ -53,7 +52,6 @@ struct CreateNotebookBottomSheet: View {
                         }
                         .multilineTextAlignment(.center)
                         
-                        // --- Notebook Name Input Field ---
                         TextField("Enter Notebook Name", text: $notebookName, prompt: Text("Notebook name").foregroundColor(secondaryTextColor))
                             .foregroundColor(.white)
                             .padding(.horizontal, 16)
@@ -61,19 +59,16 @@ struct CreateNotebookBottomSheet: View {
                             .background(fieldBackgroundColor)
                             .cornerRadius(12)
                         
-                        // --- Selected Files Preview ---
                         if !selectedFiles.isEmpty {
                             Text("Selected: \(selectedFiles.count) file(s)")
                                 .font(.system(size: 14, weight: .medium))
                                 .foregroundColor(secondaryTextColor)
                         }
                         
-                        // --- Section Subtitle ---
-                        Text("Choose Files")
+                        Text("Choose Local Files")
                             .font(.system(size: 14, weight: .medium))
                             .foregroundColor(secondaryTextColor)
                         
-                        // --- Option Buttons Stack ---
                         VStack(spacing: 12) {
                             sourceButton(title: "PDF", iconName: "doc.viewfinder", type: .pdf) {
                                 triggerPicker(for: [.pdf])
@@ -86,18 +81,21 @@ struct CreateNotebookBottomSheet: View {
                             sourceButton(title: "Other Files", iconName: "folder", type: .data) {
                                 triggerPicker(for: [.data, .content])
                             }
+                            
+                            sourceButton(title: "Load Existing Notebook", iconName: "square.and.arrow.down", type: .json) {
+                                isLoadNotebookPickerPresented = true
+                            }
                         }
                         
                         Spacer()
                         
-                        // --- Create Notebook Capsule Button ---
                         Button(action: {
                             createNotebookAndIngest()
                         }) {
                             Text("Create Notebook")
                                 .font(.system(size: 16, weight: .bold))
                                 .foregroundColor(.black)
-                                .frame(maxWidth: .infinity)
+                                .frame(maxHeight: .infinity)
                                 .frame(height: 52)
                                 .background(accentGreen)
                                 .clipShape(Capsule())
@@ -124,6 +122,42 @@ struct CreateNotebookBottomSheet: View {
                 print("Error picking document: \(error.localizedDescription)")
             }
         }
+        .fileImporter(
+            isPresented: $isLoadNotebookPickerPresented,
+            allowedContentTypes: [.json],
+            allowsMultipleSelection: false
+        ) { result in
+            switch result {
+            case .success(let urls):
+                if let url = urls.first {
+                    loadNotebookFromFile(at: url)
+                }
+            case .failure(let error):
+                print("Error fetching targeted document: \(error.localizedDescription)")
+            }
+        }
+    }
+    
+    private func loadNotebookFromFile(at url: URL) {
+        let isSecurityScoped = url.startAccessingSecurityScopedResource()
+        defer {
+            if isSecurityScoped { url.stopAccessingSecurityScopedResource() }
+        }
+        
+        do {
+            let data = try Data(contentsOf: url)
+            let decoder = JSONDecoder()
+            let importedNotebook = try decoder.decode(Notebook.self, from: data)
+            
+            modelContext.insert(importedNotebook)
+            try modelContext.save()
+            
+            DispatchQueue.main.async {
+                self.isPresented = false
+            }
+        } catch {
+            print("Failed to decode or parse structured data JSON elements: \(error.localizedDescription)")
+        }
     }
     
     func extractTextFromPDF(at url: URL) -> String {
@@ -137,17 +171,13 @@ struct CreateNotebookBottomSheet: View {
         return completeText
     }
     
-    // MARK: - Notebook Creation & Embedding Logic
     private func createNotebookAndIngest() {
         let newNotebook = Notebook(title: notebookName)
-        
         let initialChatSession = ChatSession(title: "Chat context: \(notebookName)")
         newNotebook.chatSessions.append(initialChatSession)
         
         for url in selectedFiles {
-            guard url.startAccessingSecurityScopedResource() else { continue }
-            defer { url.stopAccessingSecurityScopedResource() }
-            
+            let isSecurityScoped = url.startAccessingSecurityScopedResource()
             var extractedText = ""
             let fileExtension = url.pathExtension.lowercased()
             
@@ -159,6 +189,10 @@ struct CreateNotebookBottomSheet: View {
                 }
             }
             
+            if isSecurityScoped {
+                url.stopAccessingSecurityScopedResource()
+            }
+            
             let documentSource = DocumentSource(
                 fileName: url.lastPathComponent,
                 fileType: fileExtension,
@@ -166,18 +200,15 @@ struct CreateNotebookBottomSheet: View {
             )
             
             newNotebook.sources.append(documentSource)
-            
-            // --- FIX START: Create an immutable copy for the Sendable closure ---
             let textToIngest = extractedText
             
             Task {
                 await VectorDatabase.shared.ingestDocument(
-                    text: textToIngest, // Use the immutable constant here
+                    text: textToIngest,
                     notebookId: newNotebook.id,
                     sourceId: documentSource.id
                 )
             }
-            // --- FIX END ---
         }
         modelContext.insert(newNotebook)
         try? modelContext.save()
@@ -210,7 +241,6 @@ struct CreateNotebookBottomSheet: View {
     private func isValidFile(_ url: URL, types: [UTType]) -> Bool {
         let ext = url.pathExtension.lowercased()
         guard let filter = TypeFilter.extended(type: ext) else { return false }
-        
         if types.contains(.data) || types.contains(.content) { return true }
         
         switch filter {
@@ -222,11 +252,10 @@ struct CreateNotebookBottomSheet: View {
     }
 }
 
-// MARK: - Restored Helper Structural Filter
+
 struct TypeFilter {
     enum Element: Equatable, CaseIterable {
         case pdf, text, image, any
-        
         var utType: UTType? {
             switch self {
             case .pdf: return .pdf
@@ -236,7 +265,6 @@ struct TypeFilter {
             }
         }
     }
-    
     static func extended(type extensionName: String) -> Element? {
         switch extensionName {
         case "pdf": return .pdf
