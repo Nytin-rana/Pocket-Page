@@ -1,6 +1,12 @@
 import SwiftUI
 import SwiftData
 
+import SwiftUI
+
+extension Color {
+    static let appBackground = Color(red: 26/255, green: 30/255, blue: 36/255)
+}
+
 struct MainView: View {
     @Environment(\.modelContext) private var modelContext
     
@@ -43,7 +49,7 @@ struct MainView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color(red: 26/255, green: 30/255, blue: 36/255)
+                Color.appBackground
                     .ignoresSafeArea()
                 
                 VStack(spacing: 0) {
