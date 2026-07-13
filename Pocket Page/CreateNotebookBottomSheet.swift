@@ -12,8 +12,10 @@ struct CreateNotebookBottomSheet: View {
     
     // File Picker Presentation States
     @State private var isFilePickerPresented = false
-    @State private var isLoadNotebookPickerPresented = false
+//    @State private var isLoadNotebookPickerPresented = false
     @State private var allowedTypes: [UTType] = [.data]
+    
+    @State private var isLoadingNotebookMode = false // Tracks which button was pressed
     
     private let backgroundColor = Color(red: 19/255, green: 24/255, blue: 30/255)
     private let fieldBackgroundColor = Color(red: 28/255, green: 34/255, blue: 42/255)
@@ -83,7 +85,8 @@ struct CreateNotebookBottomSheet: View {
                             }
                             
                             sourceButton(title: "Load Existing Notebook", iconName: "square.and.arrow.down", type: .json) {
-                                isLoadNotebookPickerPresented = true
+                                self.isLoadingNotebookMode = true
+                                self.triggerPicker(for: [.json])
                             }
                         }
                         
@@ -93,6 +96,7 @@ struct CreateNotebookBottomSheet: View {
                             createNotebookAndIngest()
                         }) {
                             Text("Create Notebook")
+                                .padding(12)
                                 .font(.system(size: 16, weight: .bold))
                                 .foregroundColor(.black)
                                 .frame(maxHeight: .infinity)
@@ -110,32 +114,29 @@ struct CreateNotebookBottomSheet: View {
             }
         }
         .fileImporter(
-            isPresented: $isFilePickerPresented,
-            allowedContentTypes: allowedTypes,
-            allowsMultipleSelection: true
-        ) { result in
-            switch result {
-            case .success(let urls):
-                let filtered = urls.filter { isValidFile($0, types: allowedTypes) }
-                self.selectedFiles.append(contentsOf: filtered)
-            case .failure(let error):
-                print("Error picking document: \(error.localizedDescription)")
-            }
-        }
-        .fileImporter(
-            isPresented: $isLoadNotebookPickerPresented,
-            allowedContentTypes: [.json],
-            allowsMultipleSelection: false
-        ) { result in
-            switch result {
-            case .success(let urls):
-                if let url = urls.first {
-                    loadNotebookFromFile(at: url)
+                    isPresented: $isFilePickerPresented,
+                    allowedContentTypes: allowedTypes,
+                    allowsMultipleSelection: !isLoadingNotebookMode // Multi-select for files, single for JSON
+                ) { result in
+                    switch result {
+                    case .success(let urls):
+                        if isLoadingNotebookMode {
+                            // Logic for loading an existing notebook JSON
+                            if let url = urls.first {
+                                loadNotebookFromFile(at: url)
+                            }
+                        } else {
+                            // Logic for adding source files (PDFs, Markdown, etc.)
+                            let filtered = urls.filter { isValidFile($0, types: allowedTypes) }
+                            self.selectedFiles.append(contentsOf: filtered)
+                        }
+                    case .failure(let error):
+                        print("Error picking document: \(error.localizedDescription)")
+                    }
                 }
-            case .failure(let error):
-                print("Error fetching targeted document: \(error.localizedDescription)")
-            }
-        }
+        
+//
+       
     }
     
     private func loadNotebookFromFile(at url: URL) {
@@ -233,9 +234,19 @@ struct CreateNotebookBottomSheet: View {
         }
     }
 
+
     private func triggerPicker(for types: [UTType]) {
+        // If it's not JSON, make sure we turn off notebook loading mode
+        if !types.contains(.json) {
+            self.isLoadingNotebookMode = false
+        }
+        
         self.allowedTypes = types
-        self.isFilePickerPresented = true
+        
+      
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            self.isFilePickerPresented = true
+        }
     }
     
     private func isValidFile(_ url: URL, types: [UTType]) -> Bool {
